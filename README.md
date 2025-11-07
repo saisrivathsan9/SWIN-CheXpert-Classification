@@ -157,12 +157,3 @@ The training script uses a masked binary cross-entropy that ignores `-1` labels 
 * `test.py` looks for checkpoint files matching `best_aucfinetune_from_e*` by default — update the glob logic if your naming differs.
 
 ---
-
-## Reproducibility
-
-For strict reproducibility you may want to:
-
-* Seed PyTorch, NumPy and Python's `random` at the top of the scripts
-* Set `num_workers=0` (but slower) and disable nondeterministic cuDNN settings
-
----
