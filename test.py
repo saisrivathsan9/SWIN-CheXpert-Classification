@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 print("[DEBUG] Starting multi-checkpoint AUC evaluation")
 
 # Paths and config
-CHECKPOINT_DIR = "/scratch/smanika3/checkpointsv2"
+#CHECKPOINT_DIR = "/scratch/smanika3/checkpointsv3-swin-classification" old
+CHECKPOINT_DIR = "/scratch/smanika3/checkpointsv3-swin-classification-stage2_auc_v2" #finetune
 MODEL_NAME = "swin_base_patch4_window7_224"
 NUM_CLASSES = 14  # Match training checkpoints!
 BATCH_SIZE = 32
@@ -70,11 +71,31 @@ class CheXpertDataset(Dataset):
             image = self.transform(image)
         return image, label
 
+UNCERTAINTY_POLICIES = {
+    2: "U-Ones",
+    5: "U-Ignore",
+    6: "U-Ignore",
+    8: "Multiclass",   # Multiclass usually acts as U-Ignore for binary eval
+    10: "U-Zeros"
+    # All others: U-Ignore
+}
+def policy_label(label, policy):
+    if policy == "U-Ignore":
+        return label if label != -1 else 0.0
+    elif policy == "U-Ones":
+        return 1.0 if label == -1 else label
+    elif policy == "U-Zeros":
+        return 0.0 if label == -1 else label
+    else:
+        return label # Multiclass—if running binary eval still treat as U-Ignore
+
 def prepare_labels_dataframe(csv_path):
     df = pd.read_csv(csv_path)
     print(f"[DEBUG] Loaded {len(df)} rows from CSV.")
-    for col in CHEXPERT_LABELS:
-        df[col] = df[col].fillna(0).replace(-1, 1).astype(int)
+    # Apply per-class uncertainty logic
+    for i, col in enumerate(CHEXPERT_LABELS):
+        policy = UNCERTAINTY_POLICIES.get(i, "U-Ignore")
+        df[col] = df[col].fillna(0).apply(lambda v: policy_label(v, policy))
     df['Path'] = df['Path'].apply(lambda x: os.path.join(TEST_IMAGE_BASE, x))
     df['labels'] = df[CHEXPERT_LABELS].values.tolist()
     print(f"[DEBUG] Sample image path: {df['Path'].iloc[0]}")
@@ -89,9 +110,9 @@ print(f"[DEBUG] Test DataLoader ready. Batches: {len(test_loader)}")
 def extract_epoch(path):
     return int(os.path.basename(path).split('_')[-1].split('.')[0])
 all_ckpts = sorted(
-    [os.path.join(CHECKPOINT_DIR, f) for f in os.listdir(CHECKPOINT_DIR) if f.startswith("checkpoint_epoch_")],
+    [os.path.join(CHECKPOINT_DIR, f) for f in os.listdir(CHECKPOINT_DIR) if f.startswith("best_aucfinetune_from_e")],
     key=extract_epoch
-)
+) #old = checkpoint_epoch_
 print(f"[DEBUG] Found {len(all_ckpts)} checkpoints to evaluate")
 
 auc_traces = {cls: [] for cls in TARGET_COLS}
@@ -103,6 +124,8 @@ for idx_ckpt, ckpt_path in enumerate(all_ckpts):
     epoch = extract_epoch(ckpt_path)
     print(f"\n======= [EPOCH {epoch}] Evaluating checkpoint {ckpt_path} ({idx_ckpt+1}/{len(all_ckpts)}) =======")
     model = timm.create_model(MODEL_NAME, pretrained=False, num_classes=NUM_CLASSES)
+    orig_head = model.head
+    model.head = torch.nn.Sequential(orig_head, torch.nn.Dropout(p=0.5))
     checkpoint = torch.load(ckpt_path, map_location=DEVICE)
     model.load_state_dict(checkpoint['model_state_dict'])
     model.to(DEVICE)
