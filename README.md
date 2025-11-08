@@ -2,6 +2,34 @@
 
 PyTorch implementation of a multi-label chest X‑ray classifier using a Swin Transformer (Swin‑base) backbone trained on the CheXpert dataset. This repository contains training and evaluation scripts (`train.py`, `test.py`) with uncertainty-handling policies for CheXpert labels, AMP training, checkpointing, and multi-checkpoint AUC evaluation.
 
+### CheXpert Official Split
+
+* **Train:** 223,414 samples
+* **Validation:** 234 samples
+* **Test:** 668 samples
+
+---
+
+## Model Configuration
+
+* **Model:** `swin_base_patch4_window7_224` (Swin Transformer — *base* variant)
+
+* **Pretrained weights:** `pretrained=True` from `timm` (fine-tuned on CheXpert in this repo)
+
+* **Head / modifications:** original `model.head` plus `nn.Dropout(p=0.5)` before final output (see `train.py`)
+
+* **Loss function:** custom *masked binary cross-entropy with logits* (ignores or masks `-1` uncertain labels per-class — implemented as `masked_bce_loss` in `train.py`)
+
+* **Optimizer:** `AdamW` with `weight_decay=0.1`
+
+* **Learning rate:** `1e-4` (default in `train.py` — changeable at the top of the file)
+
+---
+
+## Results
+
+* **Mean 5-class AUC:** **0.9015** (reported for the SWIN model at the selected checkpoint)
+
 ---
 
 ## Contents
