@@ -14,7 +14,7 @@ PyTorch implementation of a multi-label chest X‑ray classifier using a Swin Tr
 
 * **Model:** `swin_base_patch4_window7_224` (Swin Transformer — *base* variant)
 
-* **Pretrained weights:** `pretrained=True` from `timm` (fine-tuned on CheXpert in this repo)
+* **Pretrained weights:** `pretrained=True` (ImageNet-1K at 224x224) from `timm` (fine-tuned on CheXpert in this repo)
 
 * **Head / modifications:** original `model.head` plus `nn.Dropout(p=0.5)` before final output (see `train.py`)
 
