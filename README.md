@@ -39,6 +39,11 @@ Mean 5-class AUC: **0.9015** (reported for the SWIN model at the selected checkp
 
 ![Final Comparision](Final_Metric.png)
 
+![loss graph](Train_valid_loss.png)
+
+![loss table](Loss_Table.png)
+
+
 ---
 
 ## Contents
