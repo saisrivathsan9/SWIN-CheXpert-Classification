@@ -28,7 +28,16 @@ PyTorch implementation of a multi-label chest X‑ray classifier using a Swin Tr
 
 ## Results
 
-* **Mean 5-class AUC:** **0.9015** (reported for the SWIN model at the selected checkpoint)
+Mean 5-class AUC: **0.9015** (reported for the SWIN model at the selected checkpoint)
+
+![Test AUC vs Epoch](Test_AUCvsEpoch.png)
+
+
+![AUC metric table](AUC_Table.png)
+
+
+
+![Final Comparision](Final_Metric.png)
 
 ---
 
@@ -166,15 +175,6 @@ The script will load checkpoints, compute per-class ROC AUCs for the five leader
 ## Loss and masking
 
 The training script uses a masked binary cross-entropy that ignores `-1` labels (or maps them according to the chosen uncertainty policy). This prevents uncertain labels from contributing to loss where policy dictates.
-
----
-
-## Tips & common edits
-
-* If you get OOM errors: lower `BATCH_SIZE`, enable gradient accumulation, or switch to a smaller model (e.g., `swin_tiny` via `timm`).
-* To change augmentations: edit the `transform` in `train.py`. Consider removing heavy ops if CPU becomes a bottleneck.
-* To use DistributedDataParallel (DDP) instead of `DataParallel`, replace the `DataParallel` block and follow PyTorch DDP setup instructions.
-* To add weighted sampling for class imbalance, create a `WeightedRandomSampler` and pass it into the `DataLoader`.
 
 ---
 
